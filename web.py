@@ -2,7 +2,7 @@ from flask import Flask, request
 import requests
 import sqlite3
 import telebot
-# from lab3humanfox import identify_picture
+from lab3humanfox import identify_picture
 
 app = Flask(__name__)
 
@@ -29,6 +29,18 @@ def receive_update():
             message = request.json["message"]["text"]
         except Exception as e:
             message = None
+            bot = telebot.TeleBot('7088127624:AAH6hA1c1sZ6fCMedrXDAIvus2xYj8WN07Q')
+            print(request.json)
+            file_info = bot.get_file(request.json['message']['photo'][-1]['file_id'])
+            print(file_info)
+
+            file_path = file_info.file_path
+            downloaded_file = bot.download_file(file_path)
+
+            filename = 'photo.jpg'
+            print(filename)
+            with open(filename, 'wb') as new_file:
+                new_file.write(downloaded_file)
 
         if message and flagRegister:
 
@@ -70,23 +82,11 @@ def receive_update():
             cur.close()
             conn.close()
 
-        if message and flagPredict and flagStatus:
-
-            bot = telebot.TeleBot('7088127624:AAH6hA1c1sZ6fCMedrXDAIvus2xYj8WN07Q')
-            print(request.json)
-            file_info = bot.get_file(request.json['message']['photo'][-1]['file_id'])
-
-            file_path = file_info.file_path
-            downloaded_file = bot.download_file(file_path)
-
-            filename = f'photo.jpg'
-            print(filename)
-            with open(filename, 'wb') as new_file:
-                new_file.write(downloaded_file)
+        if flagPredict and flagStatus:
 
             print('Predict started!')
-            # text = identify_picture('/Users/happy/Desktop/ЦК/Lab_3_AI/train2', '/Users/happy/Desktop/ЦК/Lab_3_AI/valid2', 'photo.jpg')
-            send_message(chat_id, 'text')
+            text = identify_picture('train2/', 'valid2/', 'photo.jpg')
+            send_message(chat_id, text)
             flagPredict = 0
 
         if message == '/register':
@@ -130,8 +130,11 @@ def receive_update():
 
         if message == '/predict':
 
-            flagPredict = 1
-            send_message(chat_id, "Отправьте картинку!")
+            if flagStatus:
+                flagPredict = 1
+                send_message(chat_id, "Отправьте картинку!")
+            else:
+                send_message(chat_id, "Сначала зайдите!")
 
     return {"ok": True}
 
